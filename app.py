@@ -134,6 +134,41 @@ def jenkins_monitor():
         status_data["recovery"] = "🛠️   Self-healing triggered: Jenkins job restarted." if triggered else "⚠️ Self-healing failed."
     return jsonify(status_data)
 
+# Simulated Azure VM list
+azure_vms = [
+    {"name": "vm-prod-1", "status": "Running", "region": "East US"},
+    {"name": "vm-staging-2", "status": "Running", "region": "West Europe"}
+]
+
+@app.route('/api/devops/azure-vms')
+def get_azure_vms():
+    return jsonify({"vms": azure_vms})
+
+@app.route('/api/devops/vm-crash', methods=['POST'])
+def simulate_vm_crash():
+    crashed_vm = request.json.get("name", "vm-prod-1")
+    for vm in azure_vms:
+        if vm["name"] == crashed_vm:
+            vm["status"] = "Unresponsive"
+            return jsonify({"message": f"{crashed_vm} is now Unresponsive."})
+    return jsonify({"message": f"VM {crashed_vm} not found."}), 404
+
+@app.route('/api/devops/vm-heal', methods=['POST'])
+def heal_vm():
+    vm_to_heal = request.json.get("name", "vm-prod-1")
+    for vm in azure_vms:
+        if vm["name"] == vm_to_heal and vm["status"] == "Unresponsive":
+            vm["status"] = "Running"
+            healing_action = {
+                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "action": f"Restarted {vm_to_heal}",
+                "status": "Success"
+            }
+            self_healing_logs.append(healing_action)
+            return jsonify({"message": f"{vm_to_heal} restarted. Status: Running."})
+    return jsonify({"message": f"No healing needed or VM not found."}), 400
+
+
 if __name__ == '__main__':
     app.run(debug = True,host='0.0.0.0',port=8058)
 
