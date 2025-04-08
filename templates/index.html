@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enginuity AI Nexus</title>
+  <link href="static/bootstrap/css//bootstrap.min.css" rel="stylesheet">
+  <script src=" static/bootstrap/js/jspdf.umd.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style id="theme-style">
+    body {
+      background-color: #121212;
+      color: #f1f1f1;
+    }
+    .chat-box {
+      height: 400px;
+      overflow-y: auto;
+      background-color: #1e1e1e;
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .chat-input {
+      background-color: #2b2b2b;
+      border: none;
+      color: white;
+    }
+    .chat-input:focus {
+      background-color: #2b2b2b;
+      color: white;
+    }
+    .tab-content {
+      margin-top: 1rem;
+    }
+    .tab-pane pre {
+      background: #1e1e1e;
+      padding: 1rem;
+      border-radius: 10px;
+    }
+    .export-btn {
+      margin-bottom: 1rem;
+    }
+    .refreshed-time {
+      font-size: 0.9rem;
+      color: #9ac7ff;
+      margin-top: -1rem;
+      margin-bottom: 0.5rem;
+      animation: fadein 1s;
+    }
+    @keyframes fadein {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+<div class="container-fluid mt-4">
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <h3>🤖 Enginuity AI Nexus</h3>
+    </div>
+    <div class="col-md-6 text-end">
+      <button class="btn btn-outline-info me-2" onclick="toggleTheme()">Toggle Theme</button>
+      <button class="btn btn-outline-warning" onclick="toggleAutoRefresh()" id="refresh-btn">Auto-Refresh: Off</button>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-3">
+      <div class="chat-box mb-3" id="chat-box"></div>
+      <div class="input-group">
+        <input type="text" id="chat-input" class="form-control chat-input" placeholder="Ask me anything..."/>
+        <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+    <div class="col-md-9">
+      <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="incidents-tab" data-bs-toggle="tab" data-bs-target="#incidents" type="button" role="tab">Incidents</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="healing-tab" data-bs-toggle="tab" data-bs-target="#healing" type="button" role="tab">Self-Healing</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab">Release Notes</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="risk-tab" data-bs-toggle="tab" data-bs-target="#risk" type="button" role="tab">Risk Analyzer</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab">Project Summary</button>
+        </li>
+	<li class="nav-item" role="presentation">
+		<button class="nav-link" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab">Jenkins Servers HealthCheck</button>
+        </li>
+      </ul>
+      <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active" id="incidents" role="tabpanel">
+          <button class="btn btn-outline-light export-btn" onclick="exportPDF('incident-output', 'incidents.pdf')">Export to PDF</button>
+          <div class="refreshed-time" id="incident-refresh"></div>
+          <pre id="incident-output">Loading incidents...</pre>
+        </div>
+        <div class="tab-pane fade" id="healing" role="tabpanel">
+          <button class="btn btn-outline-light export-btn" onclick="exportPDF('healing-output', 'healing_logs.pdf')">Export to PDF</button>
+          <div class="refreshed-time" id="healing-refresh"></div>
+          <pre id="healing-output">Loading healing logs...</pre>
+        </div>
+        <div class="tab-pane fade" id="notes" role="tabpanel">
+          <button class="btn btn-outline-light export-btn" onclick="exportPDF('notes-output', 'release_notes.pdf')">Export to PDF</button>
+          <div class="refreshed-time" id="notes-refresh"></div>
+          <pre id="notes-output">Loading release notes...</pre>
+        </div>
+        <div class="tab-pane fade" id="risk" role="tabpanel">
+          <button class="btn btn-outline-light export-btn" onclick="exportPDF('risk-output', 'risk_analysis.pdf')">Export to PDF</button>
+          <div class="refreshed-time" id="risk-refresh"></div>
+          <pre id="risk-output">Loading risk analysis...</pre>
+        </div>
+        <div class="tab-pane fade" id="summary" role="tabpanel">
+          <pre>
+🚀 Enginuity AI Nexus Summary:
+- Unified DevOps Chat Assistant
+- Modules: Incidents, Self-Healing, Risk Analysis, Docs
+- Built with Python Flask + Bootstrap
+- Simulated data with export features
+- Optimized for demos, hackathons, and smart DevOps enablement
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="static/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script>
+  let autoRefresh = false;
+  let interval;
+   async function fetchJenkinsStatus() {
+      try {
+        const response = await fetch('/api/jenkins');
+        const data = await response.json();
+
+        const container = document.getElementById("jenkins-status");
+        container.innerHTML = `
+          <div class="p-4 rounded shadow bg-white">
+            <h2 class="text-xl font-semibold mb-2">🛠️   Jenkins Job: ${data.job}</h2>
+            <p><strong>Status:</strong> ${data.status}</p>
+            <p><strong>Duration:</strong> ${data.duration}</p>
+            <p><strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString()}</p>
+            ${data.recovery ? `<p class="text-red-600 mt-2">${data.recovery}</p>` : ""}
+            ${data.message ? `<p class="text-red-600 mt-2">⚠️ ${data.message}</p>` : ""}
+          </div>
+        `;
+      } catch (err) {
+        document.getElementById("jenkins-status").innerHTML =
+          '<p class="text-red-500">🚨 Unable to connect to backend.</p>';
+      }
+    }
+
+    // Auto-refresh every 10s
+    setInterval(fetchJenkinsStatus, 10000);
+    window.onload = fetchJenkinsStatus;
+
+  function toggleTheme() {
+    const style = document.getElementById('theme-style');
+    if (style.innerHTML.includes('#121212')) {
+      style.innerHTML = style.innerHTML.replaceAll('#121212', '#ffffff').replaceAll('#1e1e1e', '#f1f1f1').replaceAll('#f1f1f1', '#121212');
+    } else {
+      location.reload();
+    }
+  }
+
+  function toggleAutoRefresh() {
+    autoRefresh = !autoRefresh;
+    document.getElementById("refresh-btn").innerText = `Auto-Refresh: ${autoRefresh ? 'On' : 'Off'}`;
+    if (autoRefresh) {
+      interval = setInterval(loadData, 5000);
+    } else {
+      clearInterval(interval);
+    }
+  }
+
+  function updateTime(id) {
+    const now = new Date();
+    const timeString = `Last refreshed at ${now.toLocaleTimeString()}`;
+    document.getElementById(id).textContent = timeString;
+  }
+
+  function sendMessage() {
+    const input = document.getElementById("chat-input");
+    const msg = input.value;
+    if (!msg.trim()) return;
+    const chatBox = document.getElementById("chat-box");
+    chatBox.innerHTML += `<div><strong>You:</strong> ${msg}</div>`;
+    input.value = "";
+
+    fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msg })
+    })
+    .then(res => res.json())
+    .then(data => {
+      chatBox.innerHTML += `<div><strong>AI:</strong> ${data.response}</div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+  }
+
+  function loadData() {
+    fetch("/incidents").then(res => res.json()).then(data => {
+      document.getElementById("incident-output").textContent = JSON.stringify(data, null, 2);
+      updateTime("incident-refresh");
+    });
+    fetch("/self-healing").then(res => res.json()).then(data => {
+      document.getElementById("healing-output").textContent = JSON.stringify(data, null, 2);
+      updateTime("healing-refresh");
+    });
+    fetch("/release-notes").then(res => res.json()).then(data => {
+      document.getElementById("notes-output").textContent = JSON.stringify(data, null, 2);
+      updateTime("notes-refresh");
+    });
+    fetch("/risk").then(res => res.json()).then(data => {
+      document.getElementById("risk-output").textContent = JSON.stringify(data, null, 2);
+      updateTime("risk-refresh");
+    });
+  }
+
+  function exportPDF(id, filename) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const content = document.getElementById(id).innerText;
+    const lines = doc.splitTextToSize(content, 180);
+    doc.text(lines, 10, 10);
+    doc.save(filename);
+  }
+  window.onload = loadData;
+</script>
+</body>
+</html>
