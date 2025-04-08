@@ -2,24 +2,49 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Enginuity AI - Azure VM Self-Healing</title>
+  <title>Enginuity AI Nexus - Master Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>.hidden-section { display: none; }</style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans">
-  <div class="max-w-5xl mx-auto px-6 py-6">
-    <h1 class="text-3xl font-bold mb-6 text-center">☁️ Azure VM Self-Healing Demo</h1>
+<body class="bg-gray-50 text-gray-900 font-sans">
+  <div class="max-w-6xl mx-auto px-6 py-6">
+    <h1 class="text-3xl font-bold text-center mb-6">🧠 Enginuity AI Nexus - Master Dashboard</h1>
 
-    <div class="text-center mb-4">
-      <button onclick="showSection('azure-section', loadAzureVMs)" class="bg-white rounded-xl shadow p-4 text-lg">☁️ Show Azure VM List</button>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-center mb-8">
+      <button onclick="showSection('incidents', loadIncidents)" class="bg-white rounded-xl shadow p-4">📋 Incidents</button>
+      <button onclick="showSection('healing', loadHealing)" class="bg-white rounded-xl shadow p-4">🚑 Healing Logs</button>
+      <button onclick="showSection('release', loadReleases)" class="bg-white rounded-xl shadow p-4">🚀 Releases</button>
+      <button onclick="showSection('risk', loadRisk)" class="bg-white rounded-xl shadow p-4">⚠️ Risks</button>
+      <button onclick="showSection('jenkins', loadJenkins)" class="bg-white rounded-xl shadow p-4">🔧 Jenkins</button>
+      <button onclick="showSection('azure', loadAzureVMs)" class="bg-white rounded-xl shadow p-4">☁️ Azure VMs</button>
     </div>
 
-    <div id="azure-section" class="hidden-section bg-white p-4 rounded-xl shadow mt-4">
-      <h2 class="text-xl font-semibold mb-4">☁️ Azure VM List</h2>
-      <div id="azure-table" class="mb-4">Loading...</div>
+    <!-- Sections -->
+    <div id="incidents" class="hidden-section bg-white p-4 rounded-xl shadow mb-4">
+      <h2 class="text-xl font-semibold mb-2">📋 Incident Logs</h2>
+      <div id="incident-table">Loading...</div>
+    </div>
+    <div id="healing" class="hidden-section bg-white p-4 rounded-xl shadow mb-4">
+      <h2 class="text-xl font-semibold mb-2">🚑 Self-Healing Logs</h2>
+      <div id="healing-table">Loading...</div>
+    </div>
+    <div id="release" class="hidden-section bg-white p-4 rounded-xl shadow mb-4">
+      <h2 class="text-xl font-semibold mb-2">🚀 Release Notes</h2>
+      <div id="release-table">Loading...</div>
+    </div>
+    <div id="risk" class="hidden-section bg-white p-4 rounded-xl shadow mb-4">
+      <h2 class="text-xl font-semibold mb-2">⚠️ Risk Analyzer</h2>
+      <div id="risk-table">Loading...</div>
+    </div>
+    <div id="jenkins" class="hidden-section bg-white p-4 rounded-xl shadow mb-4">
+      <h2 class="text-xl font-semibold mb-2">🔧 Jenkins Monitor</h2>
+      <div id="jenkins-status">Loading...</div>
+    </div>
 
-      <!-- Azure VM Controls -->
-      <div class="my-4">
+    <div id="azure" class="hidden-section bg-white p-4 rounded-xl shadow mb-4">
+      <h2 class="text-xl font-semibold mb-2">☁️ Azure VM Dashboard</h2>
+      <div id="azure-table">Loading...</div>
+      <div class="mt-4">
         <h3 class="text-lg font-semibold mb-2">🧪 Simulate VM Crash / Healing</h3>
         <select id="vm-select" class="border px-2 py-1 rounded mr-2">
           <option value="vm-prod-1">vm-prod-1</option>
@@ -32,6 +57,17 @@
     </div>
   </div>
 
+  <!-- Floating Chatbot -->
+  <div class="fixed bottom-4 right-4 w-72 bg-white shadow-xl rounded-xl border border-gray-300 z-50">
+    <div class="p-3 border-b font-bold text-center text-blue-600">🤖 DevOps Chat Assistant</div>
+    <div id="chat-box" class="p-2 h-56 overflow-y-auto text-sm"></div>
+    <div class="p-2 flex items-center border-t">
+      <input id="chat-input" type="text" placeholder="Type a message..." class="flex-1 border rounded px-2 py-1 mr-2" onkeydown="if(event.key==='Enter') sendMessage()">
+      <button onclick="sendMessage()" class="bg-blue-500 text-white px-2 py-1 rounded text-sm">Send</button>
+    </div>
+  </div>
+
+  <!-- Script -->
   <script>
     function showSection(id, loader) {
       document.querySelectorAll('.hidden-section').forEach(el => el.classList.add('hidden'));
@@ -39,20 +75,53 @@
       loader();
     }
 
+    async function loadIncidents() {
+      const res = await fetch('/incidents');
+      const data = await res.json();
+      const html = data.map(i => `<tr><td>${i.timestamp}</td><td>${i.title}</td><td>${i.status}</td><td>${i.root_cause}</td><td>${i.impact}</td></tr>`).join('');
+      document.getElementById('incident-table').innerHTML = '<table class="w-full"><tr><th>Time</th><th>Title</th><th>Status</th><th>Cause</th><th>Impact</th></tr>' + html + '</table>';
+    }
+
+    async function loadHealing() {
+      const res = await fetch('/self-healing');
+      const data = await res.json();
+      const html = data.map(h => `<tr><td>${h.timestamp}</td><td>${h.action}</td><td>${h.status}</td></tr>`).join('');
+      document.getElementById('healing-table').innerHTML = '<table class="w-full"><tr><th>Time</th><th>Action</th><th>Status</th></tr>' + html + '</table>';
+    }
+
+    async function loadReleases() {
+      const res = await fetch('/release-notes');
+      const data = await res.json();
+      const html = data.map(r => `<tr><td>${r.version}</td><td>${r.changes.join(', ')}</td></tr>`).join('');
+      document.getElementById('release-table').innerHTML = '<table class="w-full"><tr><th>Version</th><th>Changes</th></tr>' + html + '</table>';
+    }
+
+    async function loadRisk() {
+      const res = await fetch('/risk');
+      const data = await res.json();
+      const html = Object.entries(data).map(([k, v]) => `<tr><td>${k}</td><td>${v.score}</td><td>${v.reason}</td></tr>`).join('');
+      document.getElementById('risk-table').innerHTML = '<table class="w-full"><tr><th>PR</th><th>Score</th><th>Reason</th></tr>' + html + '</table>';
+    }
+
+    async function loadJenkins() {
+      const res = await fetch('/api/jenkins');
+      const data = await res.json();
+      const html = `<p><strong>Job:</strong> ${data.job}</p><p><strong>Status:</strong> ${data.status}</p><p><strong>Duration:</strong> ${data.duration}</p><p>${data.recovery || ''}</p>`;
+      document.getElementById('jenkins-status').innerHTML = html;
+    }
+
     async function loadAzureVMs() {
       const res = await fetch('/api/devops/azure-vms');
       const data = await res.json();
       const rows = data.vms.map(vm => `<tr><td>${vm.name}</td><td>${vm.status}</td><td>${vm.region}</td></tr>`).join('');
-      document.getElementById('azure-table').innerHTML = `
-        <table class="w-full text-left"><tr><th>Name</th><th>Status</th><th>Region</th></tr>${rows}</table>
-      `;
+      document.getElementById('azure-table').innerHTML = '<table class="w-full text-left"><tr><th>Name</th><th>Status</th><th>Region</th></tr>' + rows + '</table>';
     }
 
     async function simulateCrash() {
       const vm = document.getElementById('vm-select').value;
       const res = await fetch('/api/devops/vm-crash', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: vm })
       });
       const data = await res.json();
@@ -64,12 +133,29 @@
       const vm = document.getElementById('vm-select').value;
       const res = await fetch('/api/devops/vm-heal', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: vm })
       });
       const data = await res.json();
       document.getElementById('vm-action-result').textContent = data.message;
       loadAzureVMs();
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('chat-input');
+      const msg = input.value;
+      if (!msg) return;
+      const chatBox = document.getElementById('chat-box');
+      chatBox.innerHTML += `<div class='text-right text-sm my-1'>🧑‍💻 ${msg}</div>`;
+      input.value = '';
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+      const data = await res.json();
+      chatBox.innerHTML += `<div class='text-left text-sm my-1'>🤖 ${data.response}</div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
   </script>
 </body>
